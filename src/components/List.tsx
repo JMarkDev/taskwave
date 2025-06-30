@@ -11,6 +11,7 @@ interface ListProps {
   onCardClick: (card: CardType) => void;
   onEditListTitle: (listId: string, newTitle: string) => void;
   onRemoveList: (listId: string) => void;
+  onSortByDate: (listId: string, updatedCards: CardType[]) => void;
   onSortByTitle: (listId: string, updatedCards: CardType[]) => void;
 }
 
@@ -19,12 +20,17 @@ const List: React.FC<ListProps> = ({
   onAddCard,
   onCardClick,
   onEditListTitle,
-}) => {
+  onRemoveList,
+  onSortByDate,
+  onSortByTitle,
+}: ListProps) => {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isTitleAsc, setIsTitleAsc] = useState(false);
+  const [isDateAsc, setIsDateAsc] = useState(false);
 
   const handleAddCard = () => {
     if (newCardTitle.trim()) {
@@ -85,12 +91,33 @@ const List: React.FC<ListProps> = ({
     setIsMenuOpen((prev) => !prev);
   };
 
-  const handleRemoveList = () => {
-    throw new Error('Function not implemented.');
+  const handleRemoveList = (listId: string) => {
+    if (listId.trim() !== ' ') {
+      onRemoveList(listId);
+    }
   };
 
-  const handleSortByTitle = () => {
-    throw new Error('Function not implemented.');
+  const handleSortByTitle = (listId: string) => {
+    const sortedCards = [...list.cards].sort((a, b) =>
+      isTitleAsc
+        ? b.title.localeCompare(a.title)
+        : a.title.localeCompare(b.title),
+    );
+    onSortByTitle(listId, sortedCards);
+    setIsTitleAsc(!isTitleAsc);
+    setIsDateAsc(false);
+  };
+
+  const handleSortByDate = (listId: string) => {
+    const sortedCards = [...list.cards].sort((a, b) => {
+      const dateA = new Date(a.dateAdded).getTime();
+      const dateB = new Date(b.dateAdded).getTime();
+      return isDateAsc ? dateB - dateA : dateA - dateB;
+    });
+
+    onSortByDate(listId, sortedCards);
+    setIsDateAsc(!isDateAsc);
+    setIsTitleAsc(false);
   };
 
   return (
@@ -136,11 +163,14 @@ const List: React.FC<ListProps> = ({
                 </li>
                 <li
                   className="py-2 px-4 rounded cursor-pointer hover:bg-[#8d80d6]"
-                  onClick={handleSortByTitle}
+                  onClick={() => handleSortByTitle(list.id)}
                 >
                   Sort by title (Ascending and Descending)
                 </li>
-                <li className="py-2 px-4 rounded cursor-pointer hover:bg-[#8d80d6]">
+                <li
+                  className="py-2 px-4 rounded cursor-pointer hover:bg-[#8d80d6]"
+                  onClick={() => handleSortByDate(list.id)}
+                >
                   Sort by date (Ascending and Descending)
                 </li>
               </ul>
@@ -158,7 +188,7 @@ const List: React.FC<ListProps> = ({
               <div className="flex justify-end gap-2">
                 <button
                   className="bg-red-600 px-4 py-2 rounded text-sm"
-                  onClick={handleRemoveList}
+                  onClick={() => handleRemoveList(list.id)}
                 >
                   Remove
                 </button>
